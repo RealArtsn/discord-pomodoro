@@ -80,15 +80,14 @@ class Client(discord.Client):
             i = time - (unix_now() - unix_start)
             # wait 60 seconds or i seconds if less than 1 minute
             if i > 60:
-                sleep = 60
+                sleep_time = 60
             else:
-                sleep = i
-            await asyncio.sleep(i)
+                sleep_time = i
+            await asyncio.sleep(sleep_time)
 
         voice_client: discord.VoiceClient = self.voice_clients[0]
         # await self.change_presence(activity=discord.Game('Waiting...'))
         voice_client.play(discord.FFmpegPCMAudio(source='ding.mp3'))
-        print('played audio')
         return
 
 
