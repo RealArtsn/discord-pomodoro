@@ -30,8 +30,11 @@ class Client(discord.Client):
         # connect to channel and set timer
         @self.tree.command(name = "start", description = "Start pomodoro timer.")
         async def slash(interaction:discord.Interaction):
-            await self.reset_timer()
-
+            await interaction.response.send_message('Timer started.', ephemeral=True)
+            # run timers until bot is out of vc
+            while len(self.voice_clients) > 0:
+                await self.set_timer(1200, 'WORK')
+                await self.set_timer(300, 'BREAK')
         # create log directory if not exists
         try:
             os.mkdir('logs')
@@ -61,21 +64,32 @@ class Client(discord.Client):
             print('Exiting...')
             await self.close()
 
+        # set status to waiting
+        await self.change_presence(activity=discord.Game('Waiting...'))
+
+
     # channel status timer
-    POMODORO_SECONDS = 1200
-    async def reset_timer(self):
+    async def set_timer(self, time:int, message:str):
         def unix_now():
             return (datetime.now() - datetime(1970, 1, 1)).total_seconds()
         unix_start = unix_now()
-        i = self.POMODORO_SECONDS
-        while unix_now() < unix_start + self.POMODORO_SECONDS:
-            # set discord activity to remaining seconds
-            await self.change_presence(activity=discord.Game(str(i)))
-            await asyncio.sleep(1)
-            i -= 1
+        i = time
+        while unix_now() < unix_start + time:
+            # set discord activity to remaining time
+            await self.change_presence(activity=discord.Game(f'{message}: ' + str(int(i/60)) + ' min'))
+            i = time - (unix_now() - unix_start)
+            # wait 60 seconds or i seconds if less than 1 minute
+            if i > 60:
+                sleep = 60
+            else:
+                sleep = i
+            await asyncio.sleep(i)
+
         voice_client: discord.VoiceClient = self.voice_clients[0]
-        await self.change_presence(activity=discord.Game('Waiting...'))
-        await voice_client.play(discord.FFmpegPCMAudio(source='ding.mp3'))
+        # await self.change_presence(activity=discord.Game('Waiting...'))
+        voice_client.play(discord.FFmpegPCMAudio(source='ding.mp3'))
+        print('played audio')
+        return
 
 
 # create bot instance
