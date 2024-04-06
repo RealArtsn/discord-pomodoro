@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 import logging, sys, os
+import asyncio
 from datetime import datetime
 
 class Client(discord.Client):
@@ -25,6 +26,11 @@ class Client(discord.Client):
             await interaction.response.send_message('Disconnecting...', ephemeral=True)
             for voice_client in self.voice_clients:
                 await voice_client.disconnect()
+
+        # connect to channel and set timer
+        @self.tree.command(name = "start", description = "Start pomodoro timer.")
+        async def slash(interaction:discord.Interaction):
+            await self.reset_timer()
 
         # create log directory if not exists
         try:
@@ -55,8 +61,22 @@ class Client(discord.Client):
             print('Exiting...')
             await self.close()
 
+    # channel status timer
+    POMODORO_SECONDS = 1200
+    async def reset_timer(self):
+        def unix_now():
+            return (datetime.now() - datetime(1970, 1, 1)).total_seconds()
+        unix_start = unix_now()
+        i = self.POMODORO_SECONDS
+        while unix_now() < unix_start + self.POMODORO_SECONDS:
+            # set discord activity to remaining seconds
+            await self.change_presence(activity=discord.Game(str(i)))
+            await asyncio.sleep(1)
+            i -= 1
+        voice_client: discord.VoiceClient = self.voice_clients[0]
+        await self.change_presence(activity=discord.Game('Waiting...'))
+        await voice_client.play(discord.FFmpegPCMAudio(source='ding.mp3'))
 
-    
 
 # create bot instance
 Client(intents=discord.Intents.default())
