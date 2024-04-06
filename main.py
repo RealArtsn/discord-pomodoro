@@ -9,6 +9,23 @@ class Client(discord.Client):
         # set up slash command tree
         self.tree = app_commands.CommandTree(self)
 
+        @self.tree.command(name = "connect", description = "Connects to voice channel.")
+        async def slash(interaction:discord.Interaction):
+            # disconnect all existing voice clients
+            for voice_client in self.voice_clients:
+                await voice_client.disconnect()
+            # connect to calling user's voice channel and respond
+            await interaction.user.voice.channel.connect()
+            response = 'Connected successfully.' if self.voice_clients[0].is_connected() else 'Connecting failed.'
+            await interaction.response.send_message(response ,ephemeral=True)
+        
+        # Disconnect from all connected voice clients    
+        @self.tree.command(name = "disconnect", description = "Disconnects from voice channel.")
+        async def slash(interaction:discord.Interaction):
+            await interaction.response.send_message('Disconnecting...', ephemeral=True)
+            for voice_client in self.voice_clients:
+                await voice_client.disconnect()
+
         # create log directory if not exists
         try:
             os.mkdir('logs')
@@ -37,6 +54,9 @@ class Client(discord.Client):
             await self.tree.sync()
             print('Exiting...')
             await self.close()
+
+
+    
 
 # create bot instance
 Client(intents=discord.Intents.default())
