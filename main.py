@@ -14,16 +14,6 @@ class Client(discord.Client):
         super(Client, self).__init__(*args, **kwargs)
         # set up slash command tree
         self.tree = app_commands.CommandTree(self)
-
-        @self.tree.command(name = "connect", description = "Connects to voice channel.")
-        async def slash(interaction:discord.Interaction):
-            # disconnect all existing voice clients
-            for voice_client in self.voice_clients:
-                await voice_client.disconnect()
-            # connect to calling user's voice channel and respond
-            await interaction.user.voice.channel.connect()
-            response = 'Connected successfully.' if self.is_voice_connected() else 'Connecting failed.'
-            await interaction.response.send_message(response ,ephemeral=True)
         
         # Disconnect from all connected voice clients    
         @self.tree.command(name = "disconnect", description = "Disconnects from voice channel.")
@@ -36,6 +26,8 @@ class Client(discord.Client):
         # connect to channel and set timer
         @self.tree.command(name = "start", description = "Start pomodoro timer.")
         async def slash(interaction:discord.Interaction):
+            # connect to channel
+            await self.connect_to_caller(interaction)
             await interaction.response.send_message('Timer started.', ephemeral=True)
             # run timers until bot is out of vc
             while self.is_voice_connected(): # does this actually work?
@@ -116,6 +108,15 @@ class Client(discord.Client):
     async def update_status(self, text:str):
         # use discord game activity to change status
         await self.change_presence(activity=discord.Game(text))
+
+    async def connect_to_caller(self, interaction: discord.Interaction):
+        # disconnect all existing voice clients
+        for voice_client in self.voice_clients:
+            await voice_client.disconnect()
+        # connect to calling user's voice channel and respond
+        await interaction.user.voice.channel.connect()
+        # response = 'Connected successfully.' if self.is_voice_connected() else 'Connecting failed.'
+        # await interaction.response.send_message(response ,ephemeral=True)
 
 
 # create bot instance
