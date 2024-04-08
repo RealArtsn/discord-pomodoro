@@ -15,7 +15,7 @@ class Client(discord.Client):
         self.tree = app_commands.CommandTree(self)
         
         # Disconnect from all connected voice clients    
-        @self.tree.command(name = "disconnect", description = "Disconnects from voice channel.")
+        @self.tree.command(name = "stop", description = "Stops timer and disconnects from voice channel.")
         async def slash(interaction:discord.Interaction):
             await interaction.response.send_message('Disconnecting...', ephemeral=True)
             for voice_client in self.voice_clients:
