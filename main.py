@@ -6,7 +6,6 @@ from datetime import datetime
 
 # TODO: Check if timer already running
 # TODO: Combine start/connect
-# TODO: Make sure timer properly stops
 # TODO: Add pause/stop functionality
 
 class Client(discord.Client):
@@ -31,7 +30,7 @@ class Client(discord.Client):
             await interaction.response.send_message('Timer started.', ephemeral=True)
             # run timers until bot is out of vc
             while self.is_voice_connected(): # does this actually work?
-                await self.set_timer(1200, 'WORK')
+                await self.set_timer(60, 'WORK')
                 # stop the loop if voice is not connected
                 if not self.is_voice_connected():
                     break
@@ -72,22 +71,20 @@ class Client(discord.Client):
 
 
     # channel status timer
-    async def set_timer(self, time:int, message:str):
+    async def set_timer(self, duration:int, message:str):
+        # throw error if duration is not divisible by 60
+        if duration % 60 != 0:
+            raise ValueError('Duration must be divisible by 60.')
         def unix_now():
             return (datetime.now() - datetime(1970, 1, 1)).total_seconds()
         unix_start = unix_now()
-        i = time
-        while unix_now() < unix_start + time and self.is_voice_connected():
-            # set discord activity to remaining time
-            await self.update_status(f'{message}: ' + str(int(i/60)) + ' min')
-            i = time - (unix_now() - unix_start)
-            # wait 60 seconds or i seconds if less than 1 minute
-            # sleep_time = 60 if i > 60 else i
-            if i > 60:
-                sleep_time = 60
-            else:
-                sleep_time = i
-            await asyncio.sleep(sleep_time)
+        seconds_left = duration
+        while seconds_left > 0 and self.is_voice_connected():
+            # set discord activity to remaining time at each minute mark
+            if int(seconds_left) % 60 == 0:
+                await self.update_status(f'{message}: ' + str(int(seconds_left/60)) + ' min')
+            seconds_left = duration - (unix_now() - unix_start)
+            await asyncio.sleep(1)
 
         # skip ding if voice not connected
         if not self.is_voice_connected():
@@ -115,8 +112,6 @@ class Client(discord.Client):
             await voice_client.disconnect()
         # connect to calling user's voice channel and respond
         await interaction.user.voice.channel.connect()
-        # response = 'Connected successfully.' if self.is_voice_connected() else 'Connecting failed.'
-        # await interaction.response.send_message(response ,ephemeral=True)
 
 
 # create bot instance
