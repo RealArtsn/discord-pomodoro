@@ -24,17 +24,20 @@ class Client(discord.Client):
 
         # connect to channel and set timer
         @self.tree.command(name = "start", description = "Start pomodoro timer.")
-        async def slash(interaction:discord.Interaction):
+        async def slash(interaction:discord.Interaction, work_minutes: str = '20', break_minutes: str = '5'):
+            # convert provided values to integer seconds
+            work_duration = int(work_minutes) * 60
+            break_duration = int(break_minutes) * 60
             # connect to channel
             await self.connect_to_caller(interaction)
             await interaction.response.send_message('Timer started.', ephemeral=True)
             # run timers until bot is out of vc
             while self.is_voice_connected(): # does this actually work?
-                await self.set_timer(60, 'WORK')
+                await self.set_timer(work_duration, 'WORK')
                 # stop the loop if voice is not connected
                 if not self.is_voice_connected():
                     break
-                await self.set_timer(300, 'BREAK')
+                await self.set_timer(break_duration, 'BREAK')
             await self.update_status('Waiting...')
 
         # create log directory if not exists
