@@ -31,13 +31,15 @@ class Client(discord.Client):
             # connect to channel
             await self.connect_to_caller(interaction)
             await interaction.response.send_message('Timer started.', ephemeral=True)
-            # run timers until bot is out of vc
+            # TODO run timers until bot is out of vc
+            sessions = 0 # track number of loops
             while self.is_voice_connected(): # does this actually work?
-                await self.set_timer(work_duration, 'WORK')
+                sessions += 1
+                await self.set_timer(work_duration, 'WORK ' + str(sessions))
                 # stop the loop if voice is not connected
                 if not self.is_voice_connected():
                     break
-                await self.set_timer(break_duration, 'BREAK')
+                await self.set_timer(break_duration, 'BREAK ' + str(sessions))
             await self.update_status('Waiting...')
 
         # create log directory if not exists
